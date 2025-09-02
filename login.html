@@ -128,7 +128,7 @@
             <p>Track your work hours with ease. Sign in with your Google account to get started.</p>
         </div>
 
-        <a href="/auth/google" class="google-login-btn">
+        <a href="/auth/google" class="google-login-btn" onclick="console.log('Link clicked directly'); return true;">
             <div class="google-icon">
                 <svg width="16" height="16" viewBox="0 0 24 24">
                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -139,6 +139,11 @@
             </div>
             Sign in with Google
         </a>
+        
+        <!-- Debug info -->
+        <div style="margin-top: 20px; padding: 10px; background: #f0f0f0; border-radius: 4px; font-size: 12px; color: #666;">
+            Debug: <a href="/auth/google" style="color: blue;">Direct link to /auth/google</a>
+        </div>
 
         <div class="features">
             <ul class="feature-list">
