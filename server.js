@@ -1,0 +1,307 @@
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const path = require('path');
+const session = require('express-session');
+const passport = require('passport');
+const { v4: uuidv4 } = require('uuid');
+
+// Use Vercel Postgres in production (Vercel), SQLite in development
+const Database = process.env.VERCEL 
+    ? require('./database-vercel') 
+    : require('./database');
+const { setupAuth, requireAuth, requireAuthAPI } = require('./auth');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+const db = new Database();
+
+app.use(cors({
+    origin: process.env.NODE_ENV === 'production' 
+        ? process.env.BASE_URL 
+        : ['http://localhost:3000', 'http://127.0.0.1:3000'],
+    credentials: true
+}));
+
+app.use(express.json());
+
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'your-fallback-secret-key',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    }
+}));
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+async function initializeDatabase() {
+    try {
+        await db.connect();
+        setupAuth(db);
+        console.log('Database and authentication initialized successfully');
+    } catch (error) {
+        console.error('Failed to initialize database:', error);
+        process.exit(1);
+    }
+}
+
+// Auth routes
+app.get('/auth/google', passport.authenticate('google', {
+    scope: ['profile', 'email']
+}));
+
+app.get('/auth/google/callback', 
+    passport.authenticate('google', { failureRedirect: '/login' }),
+    (req, res) => {
+        res.redirect('/');
+    }
+);
+
+app.post('/auth/logout', (req, res) => {
+    req.logout((err) => {
+        if (err) {
+            return res.status(500).json({
+                success: false,
+                error: 'Logout failed'
+            });
+        }
+        
+        req.session.destroy((err) => {
+            if (err) {
+                return res.status(500).json({
+                    success: false,
+                    error: 'Session destruction failed'
+                });
+            }
+            
+            res.json({
+                success: true,
+                message: 'Logged out successfully'
+            });
+        });
+    });
+});
+
+// User info route
+app.get('/api/user', requireAuthAPI, (req, res) => {
+    const { id, google_id, email, name, profile_picture } = req.user;
+    res.json({
+        success: true,
+        user: {
+            id,
+            googleId: google_id,
+            email,
+            name,
+            profilePicture: profile_picture
+        }
+    });
+});
+
+// Static files (only serve to authenticated users for main app)
+app.use('/login', express.static('.'));
+app.use('/', requireAuth, express.static('.'));
+
+// Login page route
+app.get('/login', (req, res) => {
+    if (req.isAuthenticated()) {
+        return res.redirect('/');
+    }
+    res.sendFile(path.join(__dirname, 'login.html'));
+});
+
+// Main app route
+app.get('/', requireAuth, (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// API routes (all require authentication)
+app.post('/api/timesheet', requireAuthAPI, async (req, res) => {
+    try {
+        const weekData = req.body;
+        const userId = req.user.id;
+        
+        if (!weekData.weekStart || !weekData.data) {
+            return res.status(400).json({ 
+                error: 'Missing required fields: weekStart and data' 
+            });
+        }
+
+        const result = await db.saveTimesheet(userId, weekData);
+        
+        res.status(201).json({
+            success: true,
+            message: 'Timesheet saved successfully',
+            data: result
+        });
+    } catch (error) {
+        console.error('Error saving timesheet:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to save timesheet',
+            message: error.message
+        });
+    }
+});
+
+app.get('/api/timesheet/:weekStart', requireAuthAPI, async (req, res) => {
+    try {
+        const { weekStart } = req.params;
+        const userId = req.user.id;
+        const timesheet = await db.getTimesheet(userId, weekStart);
+        
+        if (!timesheet) {
+            return res.status(404).json({
+                success: false,
+                error: 'Timesheet not found'
+            });
+        }
+
+        res.json({
+            success: true,
+            data: timesheet
+        });
+    } catch (error) {
+        console.error('Error fetching timesheet:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch timesheet',
+            message: error.message
+        });
+    }
+});
+
+app.get('/api/timesheets', requireAuthAPI, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const timesheets = await db.getAllTimesheets(userId);
+        
+        res.json({
+            success: true,
+            data: timesheets
+        });
+    } catch (error) {
+        console.error('Error fetching timesheets:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch timesheets',
+            message: error.message
+        });
+    }
+});
+
+app.delete('/api/timesheet/:weekStart', requireAuthAPI, async (req, res) => {
+    try {
+        const { weekStart } = req.params;
+        const userId = req.user.id;
+        
+        const deleteQuery = 'DELETE FROM timesheets WHERE user_id = ? AND week_start = ?';
+        
+        db.db.run(deleteQuery, [userId, weekStart], function(err) {
+            if (err) {
+                console.error('Error deleting timesheet:', err);
+                return res.status(500).json({
+                    success: false,
+                    error: 'Failed to delete timesheet',
+                    message: err.message
+                });
+            }
+
+            if (this.changes === 0) {
+                return res.status(404).json({
+                    success: false,
+                    error: 'Timesheet not found'
+                });
+            }
+
+            res.json({
+                success: true,
+                message: 'Timesheet deleted successfully'
+            });
+        });
+    } catch (error) {
+        console.error('Error deleting timesheet:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to delete timesheet',
+            message: error.message
+        });
+    }
+});
+
+app.get('/api/health', (req, res) => {
+    res.json({ 
+        status: 'OK', 
+        timestamp: new Date().toISOString(),
+        database: db.db ? 'Connected' : 'Disconnected',
+        authenticated: req.isAuthenticated() ? 'Yes' : 'No'
+    });
+});
+
+app.use((req, res) => {
+    if (req.path.startsWith('/api/')) {
+        return res.status(404).json({
+            success: false,
+            error: 'Endpoint not found'
+        });
+    }
+    res.status(404).send('Page not found');
+});
+
+app.use((error, req, res, next) => {
+    console.error('Unhandled error:', error);
+    if (req.path.startsWith('/api/')) {
+        res.status(500).json({
+            success: false,
+            error: 'Internal server error',
+            message: error.message
+        });
+    } else {
+        res.status(500).send('Internal server error');
+    }
+});
+
+process.on('SIGINT', async () => {
+    console.log('\nReceived SIGINT, closing database connection...');
+    try {
+        await db.close();
+        console.log('Database connection closed. Exiting...');
+        process.exit(0);
+    } catch (error) {
+        console.error('Error closing database:', error);
+        process.exit(1);
+    }
+});
+
+async function startServer() {
+    try {
+        await initializeDatabase();
+        
+        app.listen(PORT, () => {
+            console.log(`🚀 Lil Timesheet server running on ${process.env.BASE_URL || `http://localhost:${PORT}`}`);
+            console.log(`📊 Database: SQLite (${path.join(__dirname, 'timesheet.db')})`);
+            console.log('🔐 Authentication: Google OAuth 2.0');
+            console.log('📡 API endpoints available:');
+            console.log('  GET    /auth/google              - Login with Google');
+            console.log('  POST   /auth/logout              - Logout');
+            console.log('  GET    /api/user                 - Get current user');
+            console.log('  GET    /api/timesheets           - List user timesheets');
+            console.log('  GET    /api/timesheet/:weekStart - Get specific timesheet');
+            console.log('  POST   /api/timesheet            - Save timesheet');
+            console.log('  DELETE /api/timesheet/:weekStart - Delete timesheet');
+            console.log('  GET    /api/health               - Health check');
+        });
+    } catch (error) {
+        console.error('Failed to start server:', error);
+        process.exit(1);
+    }
+}
+
+if (require.main === module) {
+    startServer();
+}
+
+module.exports = app;

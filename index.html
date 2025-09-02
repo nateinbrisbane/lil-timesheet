@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lil Timesheet</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-top">
+                <h1>Lil Timesheet</h1>
+                <div class="user-info" id="userInfo">
+                    <span class="user-name" id="userName">Loading...</span>
+                    <img class="user-avatar" id="userAvatar" src="" alt="User" style="display: none;">
+                    <button class="logout-btn" id="logoutBtn">Logout</button>
+                </div>
+            </div>
+            <div class="week-navigation">
+                <button id="prevWeek">&larr; Previous Week</button>
+                <span id="weekRange"></span>
+                <button id="nextWeek">Next Week &rarr;</button>
+            </div>
+        </header>
+
+        <main>
+            <div class="timesheet-container">
+                <table id="timesheetTable" class="timesheet-table">
+                    <thead>
+                        <tr>
+                            <th>Day</th>
+                            <th>Monday</th>
+                            <th>Tuesday</th>
+                            <th>Wednesday</th>
+                            <th>Thursday</th>
+                            <th>Friday</th>
+                            <th>Saturday</th>
+                            <th>Sunday</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="date-row">
+                            <td>Date</td>
+                            <td id="date-mon"></td>
+                            <td id="date-tue"></td>
+                            <td id="date-wed"></td>
+                            <td id="date-thu"></td>
+                            <td id="date-fri"></td>
+                            <td id="date-sat"></td>
+                            <td id="date-sun"></td>
+                        </tr>
+                        <tr class="start-time-row">
+                            <td>Start Time</td>
+                            <td><input type="time" id="start-mon" class="time-input"></td>
+                            <td><input type="time" id="start-tue" class="time-input"></td>
+                            <td><input type="time" id="start-wed" class="time-input"></td>
+                            <td><input type="time" id="start-thu" class="time-input"></td>
+                            <td><input type="time" id="start-fri" class="time-input"></td>
+                            <td><input type="time" id="start-sat" class="time-input"></td>
+                            <td><input type="time" id="start-sun" class="time-input"></td>
+                        </tr>
+                        <tr class="break-row">
+                            <td>Break</td>
+                            <td>
+                                <div class="break-inputs">
+                                    <input type="number" id="break-hours-mon" class="break-input" min="0" max="23"> h
+                                    <input type="number" id="break-minutes-mon" class="break-input" min="0" max="59"> m
+                                </div>
+                            </td>
+                            <td>
+                                <div class="break-inputs">
+                                    <input type="number" id="break-hours-tue" class="break-input" min="0" max="23"> h
+                                    <input type="number" id="break-minutes-tue" class="break-input" min="0" max="59"> m
+                                </div>
+                            </td>
+                            <td>
+                                <div class="break-inputs">
+                                    <input type="number" id="break-hours-wed" class="break-input" min="0" max="23"> h
+                                    <input type="number" id="break-minutes-wed" class="break-input" min="0" max="59"> m
+                                </div>
+                            </td>
+                            <td>
+                                <div class="break-inputs">
+                                    <input type="number" id="break-hours-thu" class="break-input" min="0" max="23"> h
+                                    <input type="number" id="break-minutes-thu" class="break-input" min="0" max="59"> m
+                                </div>
+                            </td>
+                            <td>
+                                <div class="break-inputs">
+                                    <input type="number" id="break-hours-fri" class="break-input" min="0" max="23"> h
+                                    <input type="number" id="break-minutes-fri" class="break-input" min="0" max="59"> m
+                                </div>
+                            </td>
+                            <td>
+                                <div class="break-inputs">
+                                    <input type="number" id="break-hours-sat" class="break-input" min="0" max="23"> h
+                                    <input type="number" id="break-minutes-sat" class="break-input" min="0" max="59"> m
+                                </div>
+                            </td>
+                            <td>
+                                <div class="break-inputs">
+                                    <input type="number" id="break-hours-sun" class="break-input" min="0" max="23"> h
+                                    <input type="number" id="break-minutes-sun" class="break-input" min="0" max="59"> m
+                                </div>
+                            </td>
+                        </tr>
+                        <tr class="finish-time-row">
+                            <td>Finish Time</td>
+                            <td><input type="time" id="finish-mon" class="time-input"></td>
+                            <td><input type="time" id="finish-tue" class="time-input"></td>
+                            <td><input type="time" id="finish-wed" class="time-input"></td>
+                            <td><input type="time" id="finish-thu" class="time-input"></td>
+                            <td><input type="time" id="finish-fri" class="time-input"></td>
+                            <td><input type="time" id="finish-sat" class="time-input"></td>
+                            <td><input type="time" id="finish-sun" class="time-input"></td>
+                        </tr>
+                        <tr class="total-hours-row">
+                            <td>Total Hours</td>
+                            <td id="total-mon" class="total-cell">0:00</td>
+                            <td id="total-tue" class="total-cell">0:00</td>
+                            <td id="total-wed" class="total-cell">0:00</td>
+                            <td id="total-thu" class="total-cell">0:00</td>
+                            <td id="total-fri" class="total-cell">0:00</td>
+                            <td id="total-sat" class="total-cell">0:00</td>
+                            <td id="total-sun" class="total-cell">0:00</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="summary-section">
+                <div class="weekly-total">
+                    <strong>Weekly Total: <span id="weeklyTotal">0:00</span></strong>
+                </div>
+                <button id="saveTimesheet" class="save-btn">Save Timesheet</button>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
