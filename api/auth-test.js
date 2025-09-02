@@ -1,5 +1,5 @@
 // Test Google OAuth redirect
-export default function handler(req, res) {
+module.exports = function handler(req, res) {
     try {
         console.log('Environment check:');
         console.log('GOOGLE_CLIENT_ID exists:', !!process.env.GOOGLE_CLIENT_ID);
