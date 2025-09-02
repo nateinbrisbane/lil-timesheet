@@ -163,17 +163,16 @@ app.get('/api/user', requireAuthAPI, (req, res) => {
     });
 });
 
-// Static files (only serve to authenticated users for main app)
-app.use('/login', express.static('.'));
-app.use('/', requireAuth, express.static('.'));
-
-// Login page route
+// Login page route (MUST come before auth middleware)
 app.get('/login', (req, res) => {
     if (req.isAuthenticated()) {
         return res.redirect('/');
     }
     res.sendFile(path.join(__dirname, 'login.html'));
 });
+
+// Static files (only serve to authenticated users for main app)
+app.use('/', requireAuth, express.static('.'));
 
 // Main app route
 app.get('/', requireAuth, (req, res) => {
