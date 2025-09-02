@@ -198,6 +198,44 @@ app.get('/api/debug-init', (req, res) => {
     });
 });
 
+app.get('/api/force-auth-setup', async (req, res) => {
+    try {
+        console.log('Manual auth setup requested');
+        
+        // Check if database is connected
+        if (!db.db) {
+            console.log('Database not connected, connecting...');
+            await db.connect();
+        }
+        
+        // Force setup auth
+        console.log('Forcing auth setup...');
+        setupAuth(db);
+        
+        // Check results
+        const result = {
+            success: true,
+            databaseConnected: !!db.db,
+            passportStrategies: Object.keys(passport._strategies || {}),
+            hasGoogleStrategy: !!passport._strategies?.google,
+            dbType: db.constructor.name,
+            message: 'Auth setup completed'
+        };
+        
+        console.log('Force auth setup result:', result);
+        res.json(result);
+        
+    } catch (error) {
+        console.error('Error in force auth setup:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message,
+            stack: error.stack,
+            message: 'Auth setup failed'
+        });
+    }
+});
+
 // User info route
 app.get('/api/user', requireAuthAPI, (req, res) => {
     const { id, google_id, email, name, profile_picture } = req.user;
