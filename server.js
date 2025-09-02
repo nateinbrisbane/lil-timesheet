@@ -209,6 +209,50 @@ app.get('/api/debug-init', (req, res) => {
     });
 });
 
+app.get('/api/test-oauth', async (req, res) => {
+    try {
+        console.log('Testing OAuth setup...');
+        
+        // Ensure database is initialized
+        if (!db.db) {
+            await db.connect();
+        }
+        
+        // Ensure auth is set up
+        if (!passport._strategies?.google) {
+            setupAuth(db);
+        }
+        
+        // Try to create the OAuth URL manually
+        const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?${new URLSearchParams({
+            client_id: process.env.GOOGLE_CLIENT_ID,
+            redirect_uri: `${process.env.BASE_URL}/auth/google/callback`,
+            response_type: 'code',
+            scope: 'profile email',
+            access_type: 'offline'
+        })}`;
+        
+        res.json({
+            success: true,
+            hasGoogleStrategy: !!passport._strategies?.google,
+            strategies: Object.keys(passport._strategies || {}),
+            googleAuthUrl: googleAuthUrl,
+            environment: {
+                baseUrl: process.env.BASE_URL,
+                hasClientId: !!process.env.GOOGLE_CLIENT_ID,
+                hasClientSecret: !!process.env.GOOGLE_CLIENT_SECRET
+            }
+        });
+        
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message,
+            stack: error.stack
+        });
+    }
+});
+
 app.get('/api/force-auth-setup', async (req, res) => {
     try {
         console.log('Manual auth setup requested');
