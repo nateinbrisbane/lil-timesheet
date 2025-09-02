@@ -67,12 +67,23 @@ app.get('/auth/google', async (req, res, next) => {
     
     try {
         // Ensure database is initialized before OAuth
-        if (!db.db && process.env.VERCEL) {
-            console.log('Database not initialized, initializing now...');
-            await initializeDatabase();
+        if (!db.db) {
+            console.log('Database not connected, connecting...');
+            await db.connect();
+        }
+        
+        // Ensure auth is set up before OAuth
+        if (!passport._strategies?.google) {
+            console.log('Google strategy not found, setting up auth...');
+            setupAuth(db);
         }
         
         console.log('Google strategy available:', !!passport._strategies?.google);
+        console.log('Available strategies:', Object.keys(passport._strategies || {}));
+        
+        if (!passport._strategies?.google) {
+            throw new Error('Google OAuth strategy failed to register');
+        }
         
         passport.authenticate('google', {
             scope: ['profile', 'email']
@@ -82,7 +93,7 @@ app.get('/auth/google', async (req, res, next) => {
         res.status(500).json({
             error: 'OAuth initialization failed',
             message: error.message,
-            details: 'Check server logs for more information'
+            details: error.stack || 'Check server logs for more information'
         });
     }
 });
