@@ -1,7 +1,7 @@
 # Vercel Build Trigger
 
-**OAuth Update Status:** Google OAuth app updated with new credentials
-**Trigger Time:** 2025-09-03 09:15:00  
-**Expected:** New deployment should load updated GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET
+**OAuth Fix Status:** Updated to new Google OAuth client ID (replacing deleted client)
+**Trigger Time:** 2025-09-03 09:20:00  
+**Expected:** Deployment should resolve "deleted_client" error with working OAuth flow
 
-This commit should trigger a deployment with the new OAuth configuration after updating environment variables in Vercel dashboard.
+This commit triggers deployment after updating environment variables with the NEW Google OAuth app credentials to replace the deleted client.
