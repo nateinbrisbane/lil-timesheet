@@ -58,8 +58,20 @@ async function initializeDatabase() {
     }
 }
 
+// Simple test route
+app.get('/auth/test-simple', (req, res) => {
+    res.json({
+        success: true,
+        message: 'Simple auth route works',
+        timestamp: new Date().toISOString(),
+        path: req.path,
+        method: req.method
+    });
+});
+
 // Direct OAuth redirect test (bypass Passport)
 app.get('/auth/google-direct', (req, res) => {
+    console.log('Direct OAuth route called');
     try {
         const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?${new URLSearchParams({
             client_id: process.env.GOOGLE_CLIENT_ID,
@@ -70,12 +82,20 @@ app.get('/auth/google-direct', (req, res) => {
         })}`;
         
         console.log('Direct OAuth redirect to:', googleAuthUrl);
-        res.redirect(googleAuthUrl);
+        
+        // Try returning the URL first instead of redirecting
+        res.json({
+            success: true,
+            message: 'Would redirect to:',
+            googleAuthUrl: googleAuthUrl,
+            redirectUrl: `<a href="${googleAuthUrl}">Click here to continue to Google</a>`
+        });
     } catch (error) {
         console.error('Direct OAuth redirect error:', error);
         res.status(500).json({
             error: 'Direct OAuth redirect failed',
-            message: error.message
+            message: error.message,
+            stack: error.stack
         });
     }
 });
