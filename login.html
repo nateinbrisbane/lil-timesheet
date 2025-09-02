@@ -150,5 +150,23 @@
             </ul>
         </div>
     </div>
+
+    <script>
+        // Debug the login button click
+        document.addEventListener('DOMContentLoaded', function() {
+            const loginBtn = document.querySelector('.google-login-btn');
+            
+            loginBtn.addEventListener('click', function(e) {
+                console.log('Login button clicked');
+                console.log('Redirecting to:', this.href);
+                
+                // Let the default link behavior happen
+                // But log it for debugging
+                setTimeout(() => {
+                    console.log('Should have redirected by now');
+                }, 1000);
+            });
+        });
+    </script>
 </body>
 </html>

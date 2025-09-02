@@ -85,6 +85,9 @@ app.get('/auth/google', async (req, res, next) => {
             throw new Error('Google OAuth strategy failed to register');
         }
         
+        // For debugging, let's see if this gets reached
+        console.log('About to call passport.authenticate');
+        
         passport.authenticate('google', {
             scope: ['profile', 'email']
         })(req, res, next);
