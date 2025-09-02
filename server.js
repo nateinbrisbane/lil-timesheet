@@ -38,14 +38,17 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
+// Initialize auth immediately for serverless compatibility
+setupAuth(db);
+
 async function initializeDatabase() {
     try {
         await db.connect();
-        setupAuth(db);
         console.log('Database and authentication initialized successfully');
     } catch (error) {
         console.error('Failed to initialize database:', error);
-        process.exit(1);
+        // Don't exit in serverless - let it retry
+        throw error;
     }
 }
 
@@ -300,7 +303,12 @@ async function startServer() {
     }
 }
 
-if (require.main === module) {
+// Initialize database connection for serverless
+if (process.env.VERCEL) {
+    // In Vercel, initialize on import
+    initializeDatabase().catch(console.error);
+} else if (require.main === module) {
+    // In local development, start server normally
     startServer();
 }
 
