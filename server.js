@@ -53,9 +53,16 @@ async function initializeDatabase() {
 }
 
 // Auth routes
-app.get('/auth/google', passport.authenticate('google', {
-    scope: ['profile', 'email']
-}));
+app.get('/auth/google', (req, res, next) => {
+    console.log('OAuth request initiated');
+    console.log('Environment check in auth route:');
+    console.log('GOOGLE_CLIENT_ID exists:', !!process.env.GOOGLE_CLIENT_ID);
+    console.log('BASE_URL:', process.env.BASE_URL);
+    
+    passport.authenticate('google', {
+        scope: ['profile', 'email']
+    })(req, res, next);
+});
 
 app.get('/auth/google/callback', 
     passport.authenticate('google', { failureRedirect: '/login' }),
@@ -145,6 +152,17 @@ app.get('/api/health', (req, res) => {
         timestamp: new Date().toISOString(),
         database: db.db ? 'Connected' : 'Disconnected',
         authenticated: req.isAuthenticated() ? 'Yes' : 'No'
+    });
+});
+
+app.get('/api/debug-env', (req, res) => {
+    res.json({
+        hasGoogleClientId: !!process.env.GOOGLE_CLIENT_ID,
+        hasGoogleClientSecret: !!process.env.GOOGLE_CLIENT_SECRET,
+        baseUrl: process.env.BASE_URL,
+        nodeEnv: process.env.NODE_ENV,
+        isVercel: !!process.env.VERCEL,
+        googleClientIdLength: process.env.GOOGLE_CLIENT_ID ? process.env.GOOGLE_CLIENT_ID.length : 0
     });
 });
 
