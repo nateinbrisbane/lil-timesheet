@@ -54,15 +54,32 @@ async function initializeDatabase() {
 }
 
 // Auth routes
-app.get('/auth/google', (req, res, next) => {
+app.get('/auth/google', async (req, res, next) => {
     console.log('OAuth request initiated');
     console.log('Environment check in auth route:');
     console.log('GOOGLE_CLIENT_ID exists:', !!process.env.GOOGLE_CLIENT_ID);
     console.log('BASE_URL:', process.env.BASE_URL);
     
-    passport.authenticate('google', {
-        scope: ['profile', 'email']
-    })(req, res, next);
+    try {
+        // Ensure database is initialized before OAuth
+        if (!db.db && process.env.VERCEL) {
+            console.log('Database not initialized, initializing now...');
+            await initializeDatabase();
+        }
+        
+        console.log('Google strategy available:', !!passport._strategies?.google);
+        
+        passport.authenticate('google', {
+            scope: ['profile', 'email']
+        })(req, res, next);
+    } catch (error) {
+        console.error('Error in /auth/google route:', error);
+        res.status(500).json({
+            error: 'OAuth initialization failed',
+            message: error.message,
+            details: 'Check server logs for more information'
+        });
+    }
 });
 
 app.get('/auth/google/callback', 
@@ -164,6 +181,15 @@ app.get('/api/debug-env', (req, res) => {
         nodeEnv: process.env.NODE_ENV,
         isVercel: !!process.env.VERCEL,
         googleClientIdLength: process.env.GOOGLE_CLIENT_ID ? process.env.GOOGLE_CLIENT_ID.length : 0
+    });
+});
+
+app.get('/api/debug-init', (req, res) => {
+    res.json({
+        databaseConnected: !!db.db,
+        passportStrategies: Object.keys(passport._strategies || {}),
+        hasGoogleStrategy: !!passport._strategies?.google,
+        dbType: db.constructor.name
     });
 });
 
