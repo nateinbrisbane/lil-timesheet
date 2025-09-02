@@ -38,12 +38,13 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Initialize auth immediately for serverless compatibility
-setupAuth(db);
-
 async function initializeDatabase() {
     try {
         await db.connect();
+        
+        // Initialize auth AFTER database connection
+        setupAuth(db);
+        
         console.log('Database and authentication initialized successfully');
     } catch (error) {
         console.error('Failed to initialize database:', error);
