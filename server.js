@@ -58,6 +58,28 @@ async function initializeDatabase() {
     }
 }
 
+// Direct OAuth redirect test (bypass Passport)
+app.get('/auth/google-direct', (req, res) => {
+    try {
+        const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?${new URLSearchParams({
+            client_id: process.env.GOOGLE_CLIENT_ID,
+            redirect_uri: `${process.env.BASE_URL}/auth/google/callback`,
+            response_type: 'code',
+            scope: 'profile email',
+            access_type: 'offline'
+        })}`;
+        
+        console.log('Direct OAuth redirect to:', googleAuthUrl);
+        res.redirect(googleAuthUrl);
+    } catch (error) {
+        console.error('Direct OAuth redirect error:', error);
+        res.status(500).json({
+            error: 'Direct OAuth redirect failed',
+            message: error.message
+        });
+    }
+});
+
 // Auth routes
 app.get('/auth/google', async (req, res, next) => {
     console.log('OAuth request initiated');
