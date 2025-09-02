@@ -2,19 +2,34 @@ const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 
 function setupAuth(db) {
-    passport.use(new GoogleStrategy({
-        clientID: process.env.GOOGLE_CLIENT_ID,
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        callbackURL: `${process.env.BASE_URL}/auth/google/callback`
-    }, async (accessToken, refreshToken, profile, done) => {
-        try {
-            const user = await db.createOrUpdateUser(profile);
-            return done(null, user);
-        } catch (error) {
-            console.error('Error in Google strategy:', error);
-            return done(error, null);
-        }
-    }));
+    console.log('setupAuth called with db:', !!db);
+    console.log('Environment variables:', {
+        hasClientId: !!process.env.GOOGLE_CLIENT_ID,
+        hasClientSecret: !!process.env.GOOGLE_CLIENT_SECRET,
+        baseUrl: process.env.BASE_URL
+    });
+    
+    try {
+        passport.use(new GoogleStrategy({
+            clientID: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+            callbackURL: `${process.env.BASE_URL}/auth/google/callback`
+        }, async (accessToken, refreshToken, profile, done) => {
+            try {
+                console.log('Google OAuth callback executed');
+                const user = await db.createOrUpdateUser(profile);
+                return done(null, user);
+            } catch (error) {
+                console.error('Error in Google strategy callback:', error);
+                return done(error, null);
+            }
+        }));
+        
+        console.log('Google OAuth strategy registered successfully');
+    } catch (error) {
+        console.error('Error registering Google OAuth strategy:', error);
+        throw error;
+    }
 
     passport.serializeUser((user, done) => {
         done(null, user.id);

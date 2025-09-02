@@ -40,14 +40,19 @@ app.use(passport.session());
 
 async function initializeDatabase() {
     try {
+        console.log('Initializing database...');
         await db.connect();
+        console.log('Database connected successfully');
         
         // Initialize auth AFTER database connection
+        console.log('Setting up authentication...');
         setupAuth(db);
+        console.log('Authentication setup completed');
         
         console.log('Database and authentication initialized successfully');
     } catch (error) {
         console.error('Failed to initialize database:', error);
+        console.error('Error details:', error.message);
         // Don't exit in serverless - let it retry
         throw error;
     }
