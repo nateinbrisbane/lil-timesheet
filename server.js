@@ -98,12 +98,49 @@ app.get('/auth/google', async (req, res, next) => {
     }
 });
 
-app.get('/auth/google/callback', 
-    passport.authenticate('google', { failureRedirect: '/login' }),
-    (req, res) => {
-        res.redirect('/');
+app.get('/auth/google/callback', async (req, res, next) => {
+    console.log('OAuth callback initiated');
+    console.log('Query params:', req.query);
+    
+    try {
+        // Ensure database and auth are set up for callback too
+        if (!db.db) {
+            console.log('Database not connected in callback, connecting...');
+            await db.connect();
+        }
+        
+        if (!passport._strategies?.google) {
+            console.log('Google strategy not found in callback, setting up...');
+            setupAuth(db);
+        }
+        
+        // Use passport authenticate with promise-based approach
+        passport.authenticate('google', { 
+            failureRedirect: '/login',
+            session: true 
+        })(req, res, (err) => {
+            if (err) {
+                console.error('OAuth callback error:', err);
+                return res.status(500).json({
+                    error: 'OAuth callback failed',
+                    message: err.message,
+                    details: err.stack
+                });
+            }
+            
+            console.log('OAuth callback successful, user:', req.user ? req.user.email : 'no user');
+            res.redirect('/');
+        });
+        
+    } catch (error) {
+        console.error('Error in OAuth callback route:', error);
+        res.status(500).json({
+            error: 'OAuth callback setup failed',
+            message: error.message,
+            details: error.stack
+        });
     }
-);
+});
 
 app.post('/auth/logout', (req, res) => {
     req.logout((err) => {
