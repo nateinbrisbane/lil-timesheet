@@ -97,6 +97,7 @@ app.get('/auth/google-direct', (req, res) => {
 
 // Auth routes
 app.get('/auth/google', async (req, res, next) => {
+    console.log('=== /auth/google route called ===');
     console.log('OAuth request initiated');
     console.log('Environment check in auth route:');
     console.log('GOOGLE_CLIENT_ID exists:', !!process.env.GOOGLE_CLIENT_ID);
@@ -125,9 +126,19 @@ app.get('/auth/google', async (req, res, next) => {
         // For debugging, let's see if this gets reached
         console.log('About to call passport.authenticate');
         
+        // Temporary: return JSON instead of redirecting to see if route is reached
+        return res.json({
+            message: '/auth/google route reached successfully',
+            hasGoogleStrategy: !!passport._strategies?.google,
+            strategies: Object.keys(passport._strategies || {}),
+            timestamp: new Date().toISOString()
+        });
+        
+        /*
         passport.authenticate('google', {
             scope: ['profile', 'email']
         })(req, res, next);
+        */
     } catch (error) {
         console.error('Error in /auth/google route:', error);
         res.status(500).json({
