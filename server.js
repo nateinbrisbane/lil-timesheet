@@ -69,6 +69,17 @@ app.get('/auth/test-simple', (req, res) => {
     });
 });
 
+// Debug middleware route
+app.get('/auth/debug-middleware', (req, res) => {
+    res.json({
+        message: 'Debug middleware test',
+        path: req.path,
+        isAuthenticated: req.isAuthenticated ? req.isAuthenticated() : 'no function',
+        user: req.user ? 'has user' : 'no user',
+        timestamp: new Date().toISOString()
+    });
+});
+
 // Direct OAuth redirect test (bypass Passport)
 app.get('/auth/google-direct', (req, res) => {
     console.log('Direct OAuth route called');
