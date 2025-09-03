@@ -126,23 +126,21 @@ app.get('/auth/google', async (req, res, next) => {
         // For debugging, let's see if this gets reached
         console.log('About to call passport.authenticate');
         
-        // Use passport authenticate with proper error handling
-        const authenticator = passport.authenticate('google', {
-            scope: ['profile', 'email']
-        });
-        
+        // Try passport authenticate - simplified approach
         console.log('Calling passport authenticate...');
-        authenticator(req, res, (err) => {
-            if (err) {
-                console.error('Passport authenticate error:', err);
-                return res.status(500).json({
-                    error: 'Passport authentication failed',
-                    message: err.message,
-                    details: err.stack
-                });
-            }
-            console.log('Passport authenticate completed without error');
-        });
+        try {
+            passport.authenticate('google', {
+                scope: ['profile', 'email']
+            })(req, res, next);
+            console.log('Passport authenticate called successfully');
+        } catch (passportError) {
+            console.error('Passport authenticate threw error:', passportError);
+            return res.status(500).json({
+                error: 'Passport authentication threw error',
+                message: passportError.message,
+                stack: passportError.stack
+            });
+        }
     } catch (error) {
         console.error('Error in /auth/google route:', error);
         res.status(500).json({
