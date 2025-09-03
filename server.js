@@ -141,6 +141,8 @@ app.get('/auth/google', async (req, res, next) => {
 app.get('/auth/google/callback', async (req, res, next) => {
     console.log('OAuth callback initiated');
     console.log('Query params:', req.query);
+    console.log('Has code:', !!req.query.code);
+    console.log('Has error:', !!req.query.error);
     
     try {
         // Ensure database and auth are set up for callback too
@@ -154,31 +156,42 @@ app.get('/auth/google/callback', async (req, res, next) => {
             setupAuth(db);
         }
         
-        // Use passport authenticate with promise-based approach
-        passport.authenticate('google', { 
-            failureRedirect: '/login',
-            session: true 
-        })(req, res, (err) => {
+        console.log('About to call passport.authenticate in callback');
+        console.log('Available strategies:', Object.keys(passport._strategies || {}));
+        
+        // Use passport authenticate
+        passport.authenticate('google', (err, user, info) => {
+            console.log('Passport authenticate callback executed');
+            console.log('Error:', err);
+            console.log('User:', user ? `${user.email} (${user.id})` : 'no user');
+            console.log('Info:', info);
+            
             if (err) {
-                console.error('OAuth callback error:', err);
-                return res.status(500).json({
-                    error: 'OAuth callback failed',
-                    message: err.message,
-                    details: err.stack
-                });
+                console.error('OAuth authentication error:', err);
+                return res.redirect('/login?error=auth_failed');
             }
             
-            console.log('OAuth callback successful, user:', req.user ? req.user.email : 'no user');
-            res.redirect('/');
-        });
+            if (!user) {
+                console.error('No user returned from OAuth');
+                return res.redirect('/login?error=no_user');
+            }
+            
+            // Log the user in
+            req.logIn(user, (loginErr) => {
+                if (loginErr) {
+                    console.error('Login error:', loginErr);
+                    return res.redirect('/login?error=login_failed');
+                }
+                
+                console.log('User successfully logged in:', user.email);
+                res.redirect('/');
+            });
+            
+        })(req, res, next);
         
     } catch (error) {
         console.error('Error in OAuth callback route:', error);
-        res.status(500).json({
-            error: 'OAuth callback setup failed',
-            message: error.message,
-            details: error.stack
-        });
+        res.redirect('/login?error=callback_failed');
     }
 });
 

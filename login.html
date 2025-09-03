@@ -127,6 +127,10 @@
         <div class="welcome-text">
             <p>Track your work hours with ease. Sign in with your Google account to get started.</p>
         </div>
+        
+        <!-- Error display -->
+        <div id="errorMessage" style="display: none; background: #ffebee; color: #c62828; padding: 10px; border-radius: 4px; margin-bottom: 20px; font-size: 14px;">
+        </div>
 
         <a href="/auth/google" class="google-login-btn" onclick="console.log('Link clicked directly'); return true;">
             <div class="google-icon">
@@ -166,19 +170,33 @@
     </div>
 
     <script>
-        // Debug the login button click
+        // Debug the login button click and show errors
         document.addEventListener('DOMContentLoaded', function() {
             const loginBtn = document.querySelector('.google-login-btn');
+            const errorDiv = document.getElementById('errorMessage');
+            
+            // Check for error in URL params
+            const urlParams = new URLSearchParams(window.location.search);
+            const error = urlParams.get('error');
+            
+            if (error) {
+                const errorMessages = {
+                    'auth_failed': 'Authentication failed. Please try again.',
+                    'no_user': 'No user data received from Google.',
+                    'login_failed': 'Failed to log you in. Please try again.',
+                    'callback_failed': 'OAuth callback failed. Please check your configuration.'
+                };
+                
+                errorDiv.textContent = errorMessages[error] || `OAuth error: ${error}`;
+                errorDiv.style.display = 'block';
+            }
             
             loginBtn.addEventListener('click', function(e) {
                 console.log('Login button clicked');
                 console.log('Redirecting to:', this.href);
                 
-                // Let the default link behavior happen
-                // But log it for debugging
-                setTimeout(() => {
-                    console.log('Should have redirected by now');
-                }, 1000);
+                // Hide any previous error
+                errorDiv.style.display = 'none';
             });
         });
     </script>
