@@ -82,7 +82,19 @@ app.get('/auth/debug-middleware', (req, res) => {
 
 // Direct OAuth redirect test (bypass Passport)
 app.get('/auth/google-direct', (req, res) => {
-    console.log('Direct OAuth route called');
+    console.log('=== /auth/google-direct route called ===');
+    console.log('Request path:', req.path);
+    console.log('Request method:', req.method);
+    
+    // First return JSON to test if route is reached
+    return res.json({
+        message: '/auth/google-direct route reached',
+        path: req.path,
+        timestamp: new Date().toISOString(),
+        step: 'before OAuth URL generation'
+    });
+    
+    /*
     try {
         const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?${new URLSearchParams({
             client_id: process.env.GOOGLE_CLIENT_ID,
@@ -104,6 +116,7 @@ app.get('/auth/google-direct', (req, res) => {
             stack: error.stack
         });
     }
+    */
 });
 
 // Auth routes
