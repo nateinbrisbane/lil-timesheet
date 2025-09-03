@@ -418,7 +418,15 @@ app.get('/login', (req, res) => {
 });
 
 // Static files (only serve to authenticated users for main app)
-app.use('/', requireAuth, express.static('.'));
+// Exclude /auth/* and /api/* routes from static file serving
+app.use((req, res, next) => {
+    // Skip authentication for auth routes, api routes, and login
+    if (req.path.startsWith('/auth/') || req.path.startsWith('/api/') || req.path === '/login') {
+        return next();
+    }
+    // Apply auth middleware for static files
+    requireAuth(req, res, next);
+}, express.static('.'));
 
 // Main app route
 app.get('/', requireAuth, (req, res) => {
