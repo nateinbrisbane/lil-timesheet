@@ -83,13 +83,8 @@ app.get('/auth/google-direct', (req, res) => {
         
         console.log('Direct OAuth redirect to:', googleAuthUrl);
         
-        // Try returning the URL first instead of redirecting
-        res.json({
-            success: true,
-            message: 'Would redirect to:',
-            googleAuthUrl: googleAuthUrl,
-            redirectUrl: `<a href="${googleAuthUrl}">Click here to continue to Google</a>`
-        });
+        // Actually redirect to Google OAuth
+        res.redirect(googleAuthUrl);
     } catch (error) {
         console.error('Direct OAuth redirect error:', error);
         res.status(500).json({
